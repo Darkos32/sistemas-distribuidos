@@ -1,0 +1,7 @@
+from traceback import print_tb
+
+
+def main():
+    v = {0:15}
+    print(v[0])
+main()
