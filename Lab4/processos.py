@@ -57,6 +57,7 @@ def processo():
         exposed_identificador = gerarIdentificador()
         porta = gerarPorta(exposed_identificador)
         vizinhos = gerarVizinhos(exposed_identificador)
+        numeroVotos = None
         lider = None
         jaVotou = False
         jaRecebeuResultado = False
@@ -80,7 +81,11 @@ def processo():
             if !jaVotou:
                 self.exposed_callToVote(exposed_identificador)
                 self.jaVotou = True
+                self.numeroVotos = len(self.vizinhos.values()) if lider not in vizinhos else len(self.vizinhos.values()) -1
                 for i  in range(0,len(self.vizinhos)):
+                while numeroVotos > 0:
+                    pass
+                
                     
                     
 
