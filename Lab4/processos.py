@@ -33,14 +33,12 @@ def gerarIdentificador():
 
 def gerarVizinhos(idenficador):
     vizinhos = {}
-    for i in range(0, MAX_NUMERO_NOS):
-        vizinhos[i] = None
-    for i in range(0, 2):
-        # randint(0, len(identificadoresDisponiveis)-1)
-        index = gerarIndice(MAX_NUMERO_NOS)
-        if(index != idenficador and vizinhos[index] == None):
-            vizinhos[index] = gerarPorta(index)
+    if identificador - 1 > 0:
+        vizinhos[identificador-1] = gerarPorta(identificador-1)
+    if identificador + 1<MAX_NUMERO_NOS:
+        vizinhos[identificador+1] = gerarPorta(identificador+1)
     return vizinhos
+    
 
 
 def iniciarServidor(classe, porta):
@@ -77,13 +75,24 @@ def processo():
             except:
                 return False
             return True
-        def exposed_votar(self,pai):
-            if(self.jaVotou):
-                return None
-            votos =  0
-            for endereco in self.vizinhos:
-                pass
+        def(re)
+        def exposed_processoELeitoral(self):
+            if !jaVotou:
+                self.exposed_callToVote(exposed_identificador)
+                self.jaVotou = True
+                for i  in range(0,len(self.vizinhos)):
+                    
+                    
 
+            
+        def exposed_getVoto(voto):
+            
+
+        def exposed_callToVote(self,pai):
+            for endereco in vizinhos.values():
+                conexao, raiz = iniciarConexao(endereco)
+                raiz.calltoVote(pai)
+            
         def mostrarLider(self):
             if(self.checarLider()):
                 print("processo " + self.exposed_identificador +
@@ -92,7 +101,6 @@ def processo():
                 pass
     server = threading.Thread(target=iniciarServidor, args=(No, No.porta))
     server.start()
-
     server.join()
 
 
