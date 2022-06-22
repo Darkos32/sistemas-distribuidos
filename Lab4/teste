@@ -1,7 +1,3 @@
-from traceback import print_tb
+from processos import iniciarConexao
 
-
-def main():
-    v = {0:15}
-    print(v[0])
-main()
+iniciarConexao(5003)
