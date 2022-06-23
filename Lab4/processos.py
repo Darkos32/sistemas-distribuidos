@@ -10,9 +10,8 @@ MAX_NUMERO_NOS = 5
 SERVER = 'localhost'
 INICIO = 0
 COMECOU_VOTACAO = 1
-TERMINOU_VOTACAO = 2
-AGUARDANDO_RESPOSTA = 3
-VOTACAO_ENCERRADA = 4
+AGUARDANDO_RESULTADO = 2
+TERMINADA_ELEICAO = 3
 identificadoresDisponiveis = list(range(0, MAX_NUMERO_NOS))
 nosAtivos = {}
 
@@ -63,7 +62,8 @@ def processo():
         vizinhos = gerarVizinhos(exposed_identificador)
         numeroVotos = None
         lider = None
-        pai = None
+        exposed_pai = None
+        numeroEspera = None
         candidato = exposed_identificador
         # jaVotou = False
         estado = 0
@@ -74,85 +74,82 @@ def processo():
 
         def on_disconnect( conn):
             return super().on_disconnect(conn)
-
-        def checarLider():
-            if No.lider == None:
-                return False
-            try:
-                portaLider = nosAtivos[No.lider]
-                iniciarConexao(porta=portaLider)
-            except:
-                return False
-            return True
-        # def exposed_votar():
-
-        def exposed_votacao(pai):
-            if No.estado == INICIO:
-                No.estado = COMECOU_VOTACAO
-                No.numeroVotos = 0
-                No.pai = pai
-                for endereco in No.vizinhos.values():
-                    try:
-                        conexao, raiz = iniciarConexao(endereco)
-                        raiz.votacao(No.exposed_identificador)
-                        conexao.close()
-                        No.numeroVotos += 1
-                    except:
-                        continue
-
-        def exposed_voto():
-            if(No.estado == COMECOU_VOTACAO and No.numeroVotos ==0):
-                No.estado = TERMINOU_VOTACAO if No.pai != None else VOTACAO_ENCERRADA
-            if(No.estado == TERMINOU_VOTACAO):
-                conexao, raiz = iniciarConexao(No.vizinhos[No.pai])
-                if(No.candidato > raiz.candidato):
-                    raiz.candidato = No.candidato
-                    raiz.numeroVotos -= 1
-                    No.estado = AGUARDANDO_RESPOSTA
-                conexao.close()
+        def shouldEcho(self):
+            if self.numeroEspera  == 0:
+                return True
             else:
-                for endereco in No.vizinhos.values():
+                return False
+        def temPai(self):
+            if self.pai!=None:
+                return True
+            else:
+                return False
+        def sendEcho(self):
+            if self.temPai():
+                        conexao, raiz = inciarConexao(self.vizinhos[self.pai])
+                        rpyc.async_(raiz.echo(self.candidato))
+                        self.estado = AGUARDANDO_RESULTADO
+                        conexao.close()
+            else:
+                self.estado = TERMINADA_ELEICAO
+
+        def exposed_probe(self,pai):
+            if (self.estado != INICIO):
+                self.estado = COMECOU_VOTACAO
+                self.pai = pai
+                self.numeroEspera = len(self.vizinhos)  - 1 if self.temPai() else len(self.vizinhos)
+                for endereco in self.vizinhos.values()
                     try:
-                        conexao,raiz = iniciarConexao(endereco)
-                        raiz.voto()
+                        conexao, raiz =  iniciarConexao(endereco)
+                        raiz.exposed_pai = self.exposed_identificador
+                        rpyc.async_(raiz.probe())
                         conexao.close()
                     except:
-                        continue
+                        self.numeroEspera-=1
+                if (self.shouldEcho()):
+                    self.sendEcho()
 
-        # def exposed_getVoto(voto):
-
-        # def exposed_callToVote(No,pai):
-        def reset():
-            No.pai = None
-            No.estado = INICIO
-            No.candidato = No.exposed_identificador
-        def exposed_divulgarResultado(vencedor):
-            No.reset()
-            No.lider = vencedor
-            for endereco in No.vizinhos.values():
-                try:
-                    conexao, raiz = iniciarConexao(endereco)
-                    raiz.divulgarResultado(vencedor)
-                    conexao.close()
-                except:
-                    continue
+            else:
+              if(pai !=None):
+                conexao, raiz  = iniciarConexao(self.vizinhos[self.pai])
+                raiz.ack()
+                conexao.close() 
                 
-
-
-        def mostrarLider():
-            if(No.checarLider() and No.estado == INICIO):
-                print("processo " + No.exposed_identificador +
-                      " diz que o lider é o processo " + No.lider)
+        def exposed_echo(self,candidato):
+            self.numeroEspera-=1
+            if (candidato > self.candidato):
+                self.candidato = candidato
+            if(self.shouldEcho()):
+                self.sendEcho()
+                    
+        def exposed_ack(self):
+            self.numeroEspera-=1
+            if(self.shouldEcho()):
+                self.sendEcho()
+        def exposed_divulgarResultado(self,vencedor):
+            self.lider = vencedor
+            for endereco in self.vizinhos.values():
+                conexao, raiz = iniciarConexao(endereco)
+                raiz.divulgarResultado(vencedor)
+                conexao.close()
+        def exposed_iniciarEleicao(self)
+            self.exposed_probe()
+            while self.estado != TERMINOU_ELEICAO:
+                time.sleep(0.5)
+            self.exposed_divulgarResultado(self.candidato)
+        def exposed_mostrarLider(self):
+            existeLider =  True if lider!=None else False
+            if(existeLider):
+                print("Nó " + self.exposed_identificador + "diz que Nó " + self.lider +" é o líder"
             else:
-                No.exposed_votacao(None)
-                while No.estado ==TERMINOU_VOTACAO:
-                    No.exposed_voto()
-                No.exposed_divulgarResultado(No.candidato)
+                self.exposed_iniciarEleicao()
+            
+            
+            
     server = threading.Thread(target=iniciarServidor, args=(No, No.porta))
     server.start()
     
-    for i in range(10):
-        No.mostrarLider()
+   
     server.join()
 
 
