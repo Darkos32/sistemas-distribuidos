@@ -12,7 +12,7 @@ INICIO = 0
 COMECOU_VOTACAO = 1
 AGUARDANDO_RESULTADO = 2
 TERMINADA_ELEICAO = 3
-identificadoresDisponiveis = list(range(0, MAX_NUMERO_NOS))
+identificadoresDisponiveis = list(range(0, MAX_NUMERO_NOS*2))
 nosAtivos = {}
 
 
@@ -147,14 +147,12 @@ def processo():
             
             
     server = threading.Thread(target=iniciarServidor, args=(No, No.porta))
-    server.start()
-    
-   
+    server.start()  
     server.join()
 
 
 if __name__ == "__main__":
-    for i in range(0, 1):
+    for i in range(0, MAX_NUMERO_NOS)
         p = Process(target=processo)
         time.sleep(5)
         p.start()
