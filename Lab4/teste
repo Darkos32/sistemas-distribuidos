@@ -1,4 +1,0 @@
-v = {}
-v[0] = 1
-for i in v:
-    print(i)
