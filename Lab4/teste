@@ -1,3 +1,3 @@
 from processos import iniciarConexao
 
-iniciarConexao(5003)
+iniciarConexao(6003)
