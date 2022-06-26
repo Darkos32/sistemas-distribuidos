@@ -1,3 +1,4 @@
-from processos import iniciarConexao
-
-iniciarConexao(6003)
+v = {}
+v[0] = 1
+for i in v:
+    print(i)
