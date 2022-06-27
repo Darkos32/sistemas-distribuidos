@@ -7,7 +7,7 @@ NAO_PRIMARIA = 0
 LOCK = threading.Lock()
 
 
-def inicializarSocker():
+def inicializarSocket():
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.bind((vizinhos_ip[identificador], vizinhos_portas[identificador]))
     s.listen(4)
@@ -21,12 +21,13 @@ def aceitarConexao(s):
     LOCK.release()
     return conexao, end
 
-
-def handleRequest():
+def atualizarVetorTimeStamp(novo):  
+def handleRequest(conexao,end):
     pass
 
 
 def sendRequest():
+    timeStamp[identificador-1]+=1
     pass
 
 
@@ -49,6 +50,7 @@ def inicializar():
     global chegadas
     global threads
     global conexoes
+    global timeStamp
     X = 0
     identificador = int(input("identificador: "))
     token = PRIMARIA if id == 1 else NAO_PRIMARIA
@@ -60,9 +62,8 @@ def inicializar():
     chegadas = []
     threads = []
     conexoes = []
-    for i in range(MAX_NOS):
-        pass
-
+    timeStamp = [0,0,0,0]
+    
 
 def gerarVizinhos():
     vizinhos = {}
@@ -121,5 +122,8 @@ def interface():
 if __name__ == "__main__":
     inicializar()
     teclado = threading.Thread(target=interface)
-
     teclado.start()
+    s = inicializarSocket()
+    while True:
+        conexao, end = aceitarConexao(s)
+

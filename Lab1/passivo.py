@@ -10,6 +10,7 @@ s.listen(1)
 (ativo_conect, ativo_end) = s.accept()  # socket e endereço do ativo
 
 while True:
+    print(ativo_end)
     data = ativo_conect.recv(1024)
     if not data:
         break
