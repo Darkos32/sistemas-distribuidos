@@ -1,8 +1,9 @@
+from glob import glob
 import socket
 import threading
 RECEIV_SIZE = 2048
 PORTA_BASE = 5000
-MAX_NOS = 5
+MAX_NOS = 4
 PRIMARIA = 1
 NAO_PRIMARIA = 0
 ACK = "ACK"
@@ -30,6 +31,16 @@ def esperarRequisisao(s):
         conexao, end = aceitarConexao(s)
         request = threading.Thread(target=handleRequest, args=(conexao, end,))
         request.start()
+def atualizaHistoricos(novoHistorico):
+    global historicoCompartilhado
+    global historicoReplica
+    historicoCompartilhado = novoHistorico
+    if historicoExiste and  historicoReplica[-1][0] == novoHistorico[-1][0]:
+        historicoReplica[-1] = novoHistorico[-1]
+    else:
+        historicoReplica.append(novoHistorico[-1])
+
+
 #lida com os pedidos da cópia primária
 def handleTokenRequest(identificadorCliente,conexao):
     global token
@@ -47,17 +58,27 @@ def handleTokenRequest(identificadorCliente,conexao):
         messagem = (ACK,token_holder)
     sendMessage(identificadorCliente,messagem,esperaResposta=False,sock=conexao)
 
+def handleBroadcastRequest(identificadorCliente,novoHistorico):
+    global token_holder
+    token_holder = identificadorCliente#ATUALIZA QUAL NÓ TEM O O TOKEN
+    atualizaHistoricos(novoHistorico)
+
+
 def handleRequest(conexao, end):
     pedido = conexao.recv(RECEIV_SIZE)
     pedidoString = pedido.decode("utf-8")
     identificadorCliente, operacao, novoHistorico = eval(pedidoString)
     if operacao == "TOKEN":
         handleTokenRequest(identificadorCliente,conexao)
+    elif operacao == "BROADCAST":
+        handleBroadcastRequest(identificadorCliente,novoHistorico)
+
 
 # envia uma mensagem a um nó
 def sendMessage(noAlvo, message, esperaResposta, sock = None):
     existeSock = True if sock != None else False
     if not  existeSock:
+        
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.connect((vizinhos_ip[noAlvo], vizinhos_portas[noAlvo]))
     message = str(message)#garante que a mensagem está como string
@@ -66,9 +87,10 @@ def sendMessage(noAlvo, message, esperaResposta, sock = None):
     resposta = None
     if esperaResposta:#caso a mensagem necessite de uma resposta aguarda
         resposta = sock.recv(RECEIV_SIZE)
-        sock.close()
+        
         resposta = resposta.decode('utf-8')
         resposta = eval(resposta)
+    sock.close()
     return resposta 
 
 def broadcast():
@@ -82,7 +104,7 @@ def requestToken():
     global token_holder
     global token
     while token != PRIMARIA:#repete o processo até possuir o token 
-        mensagem = (identificador, "TOKEN") # envia seu identificador e o tipo da operação
+        mensagem = (identificador, "TOKEN",[]) # envia seu identificador e o tipo da operação
         mensagemString = str(mensagem)
         sitacao, valor = sendMessage(
             token_holder, mensagemString, esperaResposta=True)
@@ -104,6 +126,7 @@ def inicializarGlobais():
     global threads
     global conexoes
     global token_holder
+    global historicoExiste
     X = 0
     identificador = int(input("identificador: "))
     token = PRIMARIA if identificador == 1 else NAO_PRIMARIA 
@@ -116,6 +139,7 @@ def inicializarGlobais():
     threads = []
     conexoes = []
     token_holder = 1
+    historicoExiste = False
 
 #começa thread responsável pela intervace
 def inicializarInterface():
@@ -138,14 +162,16 @@ def alterarX(novo_valor):
     global X
     global historicoReplica
     global historicoCompartilhado
+    global historicoExiste
     X = novo_valor
     registro = (identificador, X)#registro a ser guardado no histórico
     historicoReplica.append(registro) #toda operação é marcada no histórico do nó
-    historicoExiste  = False if historicoCompartilhado == [] else True
+    
     if historicoExiste and  historicoCompartilhado[-1][0] == identificador:
         historicoCompartilhado[-1] = registro #caso multiplas operações sucessivas seja feitas
     else:
         historicoCompartilhado.append(registro)
+        historicoExiste = True
     
 def handleChange():
     global X
@@ -176,7 +202,7 @@ def interface():
         elif(comando == "/show"):
             showX()
         elif(comando == "/hist"):
-            pass
+            showHist()
         elif(comando == "/change"):
             handleChange()
 
