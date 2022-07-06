@@ -34,11 +34,14 @@ def esperarRequisisao(s):
 def atualizaHistoricos(novoHistorico):
     global historicoCompartilhado
     global historicoReplica
+    global historicoExiste
     historicoCompartilhado = novoHistorico
     if historicoExiste and  historicoReplica[-1][0] == novoHistorico[-1][0]:
         historicoReplica[-1] = novoHistorico[-1]
     else:
         historicoReplica.append(novoHistorico[-1])
+        historicoExiste = True
+        
 
 
 #lida com os pedidos da cópia primária
